@@ -1,4 +1,4 @@
 export const relativeURI = () => {
-    const uri = 'http://localhost:8080/'
+    const uri = 'https://back-end-atestado.herokuapp.com/'
     return uri
   }
