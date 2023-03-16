@@ -1,10 +1,14 @@
-import { Center, FormControl, Input, InputLeftElement } from '@chakra-ui/react';
 import { CircleIcon } from '../components/CircleIconStatus'
 import { EditIcon, DownloadIcon, Search2Icon, DeleteIcon } from '@chakra-ui/icons'
-import { Button } from '@chakra-ui/react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { Context } from "../contexts/Context";
 import CircleStatus from '../components/StatusCircleChakra'
 import {
+    Center,
+    FormControl,
+    Input,
+    InputLeftElement,
+    Button,
     Modal,
     ModalOverlay,
     ModalContent,
@@ -24,18 +28,18 @@ import {
     InputGroup,
     Text,
     Box,
-    Stack
+    Stack,
+    useDisclosure
 } from '@chakra-ui/react'
 
-import { useDisclosure } from '@chakra-ui/react'
+//Services
 import { deleteTableRegister } from '../services/Admin/TableAdmin/deleteRegisterTable'
 import { updateStatusTableAdmin } from '../services/Admin/TableAdmin/updateStatusTable'
 import { getAllRegistersAdmin } from '../services/Admin/TableAdmin/getAllRegisterTable'
 import { getStatusCountRegistersAdmin } from '../services/Admin/TableAdmin/getStatusCountAdminTable'
-import React, { useContext } from "react";
-import { Context } from "../contexts/Context";
+import { mask } from "../utils/MaskFormaterCPF"
 
-export default function Simple(props: any) {
+export default function TablePage(props: any) {
 
     //Modal
     const { isOpen, onOpen: onOpenModal, onClose } = useDisclosure()
@@ -96,7 +100,7 @@ export default function Simple(props: any) {
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault();
         const updateStatus = async () => {
-            const updateStatusAdminTable = await updateStatusTableAdmin({ status: status, cpf: cpf })
+            await updateStatusTableAdmin({ status: status, cpf: cpf })
         }
         updateStatus()
         onClose()
@@ -106,17 +110,18 @@ export default function Simple(props: any) {
         }, 100)
     };
 
-    const setStatusColorIcon = (Status: string) => {
-        if (Status === 'Reprovado') {
-            return 'red.500'
-        } else if (Status === 'Aprovado') {
-            return 'green.500'
-        } else {
-            return 'blue.500'
-        }
-    }
+    ////Method static status color
+    // const setStatusColorIcon = (Status: string) => {
+    //     if (Status === 'Reprovado') {
+    //         return 'red.500'
+    //     } else if (Status === 'Aprovado') {
+    //         return 'green.500'
+    //     } else {
+    //         return 'blue.500'
+    //     }
+    // }
 
-    const setStatusColorIconChakra= (Status: string) => {
+    const setStatusColorIconChakra = (Status: string) => {
         if (Status === 'Reprovado') {
             return 'red.500'
         } else if (Status === 'Aprovado') {
@@ -128,9 +133,9 @@ export default function Simple(props: any) {
 
     const [searchInput, setSearchInput] = useState("")
     const handleChange = (e: any) => {
+        const { value } = e.target
         e.preventDefault()
-        console.log(searchInput)
-        setSearchInput(e.target.value)
+        setSearchInput(mask(value))
     }
     if (searchInput.length > 0) {
         result.filter((data) => {
@@ -166,7 +171,7 @@ export default function Simple(props: any) {
     function handleDelete(e: any) {
         e.preventDefault()
         const deleteSchedule = async () => {
-            const deleteTableById = await deleteTableRegister({ id: idDelete })
+            await deleteTableRegister({ id: idDelete })
         }
         deleteSchedule()
         onCloseDelete()
@@ -180,15 +185,14 @@ export default function Simple(props: any) {
     // Download file report XLS OR TXT
     function downloadFile(e: any) {
         const element = document.createElement("a")
-        let novoArray : any =["ID", "CPF", "Status", "Aptidão"] 
-        let arraySemAnexo : any =[]
-        result.map(function (item, indice, array) {
-            arraySemAnexo.push(` \n ${result[indice]['idForm']}, ${result[indice]['cpf']} , ${result[indice]['Status']} , ${result[indice]['aptidao']}` ) 
-            console.log(item)
-          });
-        
+        let novoArray: any = ["ID", "CPF", "Status", "Aptidão"]
+        let arraySemAnexo: any = []
+        result.map(function (item, indice) {
+            return arraySemAnexo.push(` \n ${result[indice]['idForm']}, ${result[indice]['cpf']} , ${result[indice]['Status']} , ${result[indice]['aptidao']}`)
+        });
+
         const file = new Blob([`${novoArray} \n ${arraySemAnexo}`]);
-        
+
         e.preventDefault()
         if (e.target.value === 'XLSX') {
             element.href = URL.createObjectURL(file);
@@ -241,6 +245,7 @@ export default function Simple(props: any) {
                             id="outlined-basic"
                             onChange={handleChange}
                             value={searchInput}
+                            maxLength={14}
                         />
                     </InputGroup>
                 </Stack>
@@ -275,15 +280,15 @@ export default function Simple(props: any) {
                                 return post;
                             }
                         }).map((post, index) => (
-                            <Tbody>
+                            <Tbody key={post.idForm}>
                                 <Tr>
-                                    <Td>{post.nomePaciente}</Td>
+                                    <Td >{post.nomePaciente}</Td>
                                     <Td>{post.cpf}</Td>
                                     <Td><Button onClick={() => handleDownload(post.anexo)}><DownloadIcon /></Button></Td>
                                     <Td>{post.nomeMedico}</Td>
                                     <Td>{post.aptidao}</Td>
                                     <Td>{post.Status}</Td>
-                                    <Td><CircleStatus status={setStatusColorIconChakra(post.Status)}/></Td>
+                                    <Td><CircleStatus status={setStatusColorIconChakra(post.Status)} /></Td>
                                     {/* <Td><CircleIcon color={`${setStatusColorIcon(post.Status)}`} /></Td> */}
                                     <Td><Button onClick={() => handleOpenModal(post.cpf, post.Status)}><EditIcon /></Button></Td>
                                     <Td><Button colorScheme='red' onClick={() => handleOpenModalDelete(post.idForm, post.cpf)}> <DeleteIcon /></Button></Td>

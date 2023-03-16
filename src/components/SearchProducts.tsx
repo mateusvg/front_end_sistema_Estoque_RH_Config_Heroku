@@ -19,10 +19,10 @@ import {
 } from '@chakra-ui/react'
 import { useContext, useEffect, useState } from 'react'
 import { Context } from '../contexts/Context'
-import { getAllStockRegistersAdmin } from '../services/Admin/Stock/getAllStockRegistersAdmin'
+import { getAllStockRegistersAdminStatusActive } from '../services/Admin/Stock/getAllStockRegistersAdmin'
 import { CloseIcon } from '@chakra-ui/icons'
 
-export default function PlacementExample(props: any) {
+export default function SearchComponentSales(props: any) {
     const { isOpen, onOpen, onClose } = useDisclosure()
 
     //Get all registers products
@@ -38,7 +38,7 @@ export default function PlacementExample(props: any) {
     //Get all registers
     const [result, setResult] = useState<resultProps[]>([]);
     const getAllRegistersStockProducts = async () => {
-        const data = await getAllStockRegistersAdmin()
+        const data = await getAllStockRegistersAdminStatusActive()
         setResult(data)
     }
 
@@ -117,7 +117,7 @@ export default function PlacementExample(props: any) {
                                         return post;
                                     } 
                                 }).map((post, index) => (
-                                    <Tbody>
+                                    <Tbody key={post.idStock}>
                                         <Tr>
                                             <Td>{post.idStock}</Td>
                                             <Td>{post.nome}</Td>

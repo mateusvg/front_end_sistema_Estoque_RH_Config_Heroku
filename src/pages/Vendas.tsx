@@ -1,14 +1,10 @@
 import {
-    AlertDescription,
-    AlertIcon,
-    AlertTitle,
     Box,
     Button,
     Center,
     Divider,
     FormControl,
     Heading,
-    List,
     Modal,
     ModalBody,
     ModalCloseButton,
@@ -18,134 +14,68 @@ import {
     ModalOverlay,
     Stack,
     Table,
+    Tbody,
+    Td,
     Text,
     Th,
     Thead,
     Tr,
     useDisclosure,
-    useToast,
-    Wrap,
-    WrapItem,
-
 } from '@chakra-ui/react';
+
 import { Search2Icon, DeleteIcon } from '@chakra-ui/icons'
-import React, { useEffect, useState } from 'react';
+import { useState } from 'react';
 import SearchProducts from '../components/SearchProducts'
 import Alert from '../components/AlertProductSale'
 import { closeFinalSaleService } from '../services/Admin/Stock/closeFinalSale'
 
+interface ObjectInterface {
+    idStock: number
+    nome: string
+    preco: number
+    quantidade: number
+}
 
-const ThreeTierPricingHorizontal = () => {
+const SalesPage = () => {
     const { isOpen: isOpenFinalSale, onOpen: onOpenFinalSale, onClose: onCloseFinalSale } = useDisclosure()
+    const [cart, setCart] = useState<ObjectInterface[]>([]);
+    const [totalGeral, setTotalGeral] = useState<number>(0)
 
-    type resultProps = {
-        [x: string]: any;
-        idStock: number
-        nome: string
-        preco: number
-        quantidade: number
-    }
-    const [cart, setCart] = useState<resultProps[]>([])
-    interface valorTotal {
-        preco: number
-    }
-    const [totalValue, setTotalValue] = useState<valorTotal[]>([])
-    console.log(totalValue)
-    const fetchCart = (...data: any) => {
-        console.log(`data : ${JSON.stringify(data)}`)
-        setCart([...cart, data]);
-        setTotalValue([...totalValue, data[0].preco])
-        setIdProductInCart([...idProductInCart, data[0].idStock])
-    }
-    let totalRound = totalValue?.reduce((t: any, preco: any) => t + preco, 0)
-    useEffect(() => {
-    }, [cart]);
-
-    const [idProductInCart, setIdProductInCart] = useState<valorTotal[]>([])
-
-    const [inputValues, setInputValues] = useState({})
-    const handleChange = ({ target }: any) => {
-
-        setInputValues({
-            ...inputValues,
-            [target?.id]: target?.value
-        })
+    async function fetchCart(...data: any) {
+        setCart([...cart, data[0]]);
+        setTotalGeral(totalGeral + data[0].preco)
+        console.log(`GERAL SOMA ${JSON.stringify(totalGeral)}`)
     }
 
-    function handlePushProductFromArray(idParan: any) {
-        cart.find((product, index) => {
-            product?.find((prod: any) => {
-
-                // console.log(`index é ${index}`)
-                // console.log(`produto = ${JSON.stringify(prod)}`)
-                // console.log(`${prod.idStock}`)
-                // console.log(`${idParan}`)
-
-                if (prod.idStock === idParan) {
-                    //console.log(`o index ${JSON.stringify(cart[index])}`)
-                    delete cart[index]
-                    setCart([...cart])
-                    delete totalValue[index]
-                    //setTotalValue([...totalValue])
-                    //console.log('valor total'+JSON.stringify(totalValue[index]))
-                    console.log(`tamanho total value ${totalValue.length}`)
-                }
-
-            });
-        });
-        fetchCart()
+    function deleteObject(id: number, preco: number) {
+        const filteredArray = cart.filter((obj) => obj.idStock !== id);
+        setCart(filteredArray);
+        setTotalGeral(totalGeral - preco)
     }
 
-    function handleClearArray() {
-        setCart([])
-        setTotalValue([])
-    }
-
-    function handleCloseSale(...cart: any) {
+    function handleCloseSale() {
         onOpenFinalSale()
-        console.log(`CARRINHO FINAL ${JSON.stringify(cart[0])}`)
     }
 
+    function clearProducts() {
+        setCart([]);
+        setTotalGeral(0)
+    }
 
     // CLOSE FINAL SALE
     const handleSubmit = (e: any): void => {
         e.preventDefault()
-        const closeFinalSale = async () => {
-            const updateProductsAttributes = await closeFinalSaleService(cart)
-        }
-        closeFinalSale()
+        closeFinalSaleService(cart)
         onCloseFinalSale()
         setTimeout(() => {
-            setCart([])
-            setTotalValue([])
+            setCart([]);
+            setTotalGeral(0)
         }, 100)
-
-
     };
-
-    function ToastStatusExample() {
-        const toast = useToast()
-        return (
-            <Wrap>
-                <WrapItem >
-                    <Button
-                        onClick={() =>
-                            toast({
-                                title: ` toast`,
-                                status: 'success',
-                                isClosable: true,
-                            })
-                        }
-                    >
-                        produtoadiocionado
-                    </Button>
-                </WrapItem>
-            </Wrap>
-        )
-    }
 
     return (
         <Box py={6} px={5} >
+
             <Stack spacing={4} width={'100%'} direction={'column'}>
                 <Stack
                     p={5}
@@ -177,61 +107,44 @@ const ThreeTierPricingHorizontal = () => {
                     </Stack>
                 </Stack>
                 <Divider />
-
-                <Table>
-                    <Thead>
-                        <Tr>
-                            <Th>Nome</Th>
-                            <Th>Quant.</Th>
-                            <Th>Preço</Th>
-                            <Th></Th>
-                        </Tr>
-                    </Thead>
-                </Table>
-
-
-                {cart.length > 0 ? cart.map((carts) => {
-                    return <Stack>
-                        {carts?.map((product: any) => (
-                            <Stack
-                                justifyContent={{
-                                    base: 'flex-start',
-                                    md: 'space-around',
-                                }}
-                                direction={{
-                                    base: 'column',
-                                    md: 'row',
-                                }}
-                                alignItems={{ md: 'center' }}>
-                                <Heading size={'md'}>{product.nome}</Heading>
-                                <List spacing={3} textAlign="start">
-                                    <Heading size={'xl'}>1</Heading>
-                                </List>
-                                <Heading size={'xl'}>R$ {product.preco}</Heading>
-                                <Heading><Button colorScheme='red' onClick={() => { handlePushProductFromArray(product.idStock) }}> <DeleteIcon /></Button></Heading>
-                            </Stack>
-                        ))}
-                    </Stack>
-                }) : <Center>Carrinho vazio</Center>}
-
+                {totalGeral === 0 ? <><Center><Heading size={'xl'}>Carrinho Vazio</Heading></Center></> :
+                    <Table>
+                        <Thead>
+                            <Tr>
+                                <Th>Nome</Th>
+                                <Th>Quant.</Th>
+                                <Th>Preço</Th>
+                                <Th></Th>
+                            </Tr>
+                        </Thead>
+                        {cart.map((carts) => {
+                            return <Tbody key={carts.idStock} >
+                                <Tr>
+                                    <Td><Heading size={'xl'}>{carts.nome}</Heading></Td>
+                                    <Td><Heading size={'xl'}>1 </Heading></Td>
+                                    <Td><Heading size={'xl'}>R$ {carts.preco}</Heading></Td>
+                                    <Td><Heading><Button colorScheme='red' onClick={() => deleteObject(carts.idStock, carts.preco)} > <DeleteIcon /></Button></Heading></Td>
+                                </Tr>
+                            </Tbody>
+                        })}
+                    </Table>
+                }
                 <Divider />
                 <Heading size={'xl'}>Total:</Heading>
-                <Heading size={'xl'}>R$ {totalRound.toFixed(2)}
+                <Heading size={'xl'}>R$ {totalGeral}
                     <Button
-                        onClick={handleClearArray}
+                        onClick={() => { clearProducts() }}
                         size="md" ml={20}>
                         Limpar produtos
                     </Button>
                 </Heading>
                 <Button
-                    size="md" onClick={() => { handleCloseSale(idProductInCart) }}>
+                    size="md" onClick={handleCloseSale}>
                     Finalizar
                 </Button>
             </Stack>
 
-
-
-            {/* MODAL DELETE PRODUCT */}
+            {/* MODAL FINALIZAR COMPRA */}
             <Modal isOpen={isOpenFinalSale} onClose={onCloseFinalSale} >
                 <ModalOverlay />
                 <form onSubmit={(e) => { handleSubmit(e) }} >
@@ -241,27 +154,17 @@ const ThreeTierPricingHorizontal = () => {
                         <ModalBody>
                             <FormControl >
                                 <Text>Deseja finalizar a compra?</Text>
-                                <Text>R$ {totalRound.toFixed(2)}</Text>
+                                <Text mt={2}><Heading size={'x'}>R$ {totalGeral} </Heading></Text>
                             </FormControl>
                         </ModalBody>
                         <ModalFooter>
-                            <Button colorScheme='blue' mr={'25%'} w={'50%'} type='submit'>
                                 <Alert />
-                            </Button>
-                            
                         </ModalFooter>
                     </ModalContent>
                 </form>
             </Modal>
-
-
-
         </Box>
-
-
-
-
     );
 };
 
-export default ThreeTierPricingHorizontal;
+export default SalesPage;

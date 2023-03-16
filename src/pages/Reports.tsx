@@ -1,4 +1,3 @@
-
 import {
     Accordion,
     AccordionItem,
@@ -6,17 +5,13 @@ import {
     AccordionPanel,
     AccordionIcon,
     Box,
-    Button, 
-    Center
+    Button,
 } from '@chakra-ui/react'
 
 export default function Reports() {
     return (
-
-        <Box ml ={"25%"}w={"45%"}>
-   
+        <Box ml={"25%"} w={"45%"}>
             <Accordion>
-
                 <AccordionItem>
                     <h2>
                         <AccordionButton>
@@ -71,7 +66,6 @@ export default function Reports() {
                 </AccordionItem>
 
             </Accordion>
-
         </Box>
     )
 }

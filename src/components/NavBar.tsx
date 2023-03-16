@@ -6,7 +6,6 @@ import {
     Button,
     Stack,
     Collapse,
-    Icon,
     Link,
     useColorModeValue,
     useBreakpointValue,
@@ -18,28 +17,29 @@ import {
 import {
     HamburgerIcon,
     CloseIcon,
-    ChevronDownIcon,
 } from '@chakra-ui/icons'
 import Menu from './Menu'
 import Logo from '../assets/img/Logo.png'
 import { useNavigate } from 'react-router-dom';
 
-import React, { useContext } from "react";
+import { useContext } from "react";
 import { Context } from "../contexts/Context";
 
-export default function WithSubnavigation() {
+export default function WithSubnavigation(props:any) {
     const navigate = useNavigate();
     const { isOpen, onToggle } = useDisclosure();
     const { context, setContext } = useContext(Context);
+    const color = useColorModeValue('gray.200', 'gray.700')
 
     return (
-        <Box>
+        <Box > 
             <Flex
                 bg={useColorModeValue('white', 'gray.800')}
                 color={useColorModeValue('gray.600', 'white')}
                 minH={'60px'}
                 py={{ base: 2 }}
                 px={{ base: 4 }}
+                position="fixed" w="100%"
                 borderBottom={1}
                 borderStyle={'solid'}
                 borderColor={useColorModeValue('gray.200', 'gray.900')}
@@ -65,39 +65,41 @@ export default function WithSubnavigation() {
                         color={useColorModeValue('gray.800', 'white')}>
                         <img src={Logo} alt="Logo" onClick={() => navigate('/')} />
                     </Text>
+                    {
+                        context ?
+                            <></> : <Flex>
+                                <HStack
+                                    ml={7}
+                                    as={'nav'}
+                                    spacing={4}
+                                    display={{ base: 'none', md: 'flex' }}>
+                                    <Link px={2}
+                                        onClick={() => navigate('status')}
+                                        py={1}
+                                        rounded={'md'}
+                                        _hover={{
+                                            textDecoration: 'none',
+                                            bg: color,
+                                        }} >Status</Link>
+                                </HStack>
 
-                    <HStack
-                        ml={7}
-                        as={'nav'}
-                        spacing={4}
-                        display={{ base: 'none', md: 'flex' }}>
-                        <Link px={2}
-                            onClick={() => navigate('status')}
-                            py={1}
-                            rounded={'md'}
-                            _hover={{
-                                textDecoration: 'none',
-                                bg: useColorModeValue('gray.200', 'gray.700'),
-                            }} >Status</Link>
-                    </HStack>
-
-                    <HStack
-                        ml={4}
-                        as={'nav'}
-                        spacing={4}
-                        display={{ base: 'none', md: 'flex' }}>
-                        <Link px={2}
-                            onClick={() => navigate('/form')}
-                            py={1}
-                            rounded={'md'}
-                            _hover={{
-                                textDecoration: 'none',
-                                bg: useColorModeValue('gray.200', 'gray.700'),
-                            }} >Formulário</Link>
-                        <Center height='90%'>
-                            <Divider orientation='vertical' />
-                        </Center>
-                    </HStack>
+                                <HStack
+                                    ml={4}
+                                    as={'nav'}
+                                    spacing={4}
+                                    display={{ base: 'none', md: 'flex' }}>
+                                    <Link px={2}
+                                        onClick={() => navigate('/form')}
+                                        py={1}
+                                        rounded={'md'}
+                                        _hover={{
+                                            textDecoration: 'none',
+                                            bg: color,
+                                        }} >Formulário</Link>
+                                    <Center height='90%'>
+                                        <Divider orientation='vertical' />
+                                    </Center>
+                                </HStack> </Flex>}
                 </Flex>
 
                 {
@@ -108,6 +110,7 @@ export default function WithSubnavigation() {
                             justify={'flex-end'}
                             direction={'row'}
                             spacing={6}>
+                            
                             <Button
                                 onClick={() => navigate('/login/reports')}
                                 as={'a'}
@@ -164,7 +167,9 @@ export default function WithSubnavigation() {
                                 }}>
                                 Agendamento
                             </Button>
+                            
                         </Stack>
+                        
                         :
                         <> </>
                 }

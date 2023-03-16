@@ -1,5 +1,6 @@
-import { useState, useEffect, ChangeEvent } from 'react';
-import { EditIcon, DownloadIcon, Search2Icon, DeleteIcon, AddIcon } from '@chakra-ui/icons'
+import React, { useContext, useState, useEffect, ChangeEvent } from 'react';
+import { Context } from "../contexts/Context";
+import { EditIcon, Search2Icon, DeleteIcon, AddIcon } from '@chakra-ui/icons'
 import CircleStatus from '../components/StatusCircleChakra'
 import {
     Button,
@@ -37,18 +38,17 @@ import {
     Text
 } from '@chakra-ui/react'
 
+//Services
 import { deleteProductsStock } from '../services/Admin/Stock/deleteStockProduct'
 import { updateStockProductsAttributes } from '../services/Admin/Stock/updateStockProductsAttributes'
 import { getAllStockRegistersAdmin } from '../services/Admin/Stock/getAllStockRegistersAdmin'
 import { getTotalProductsStock } from '../services/Admin/Stock/getTotalProductsStock'
 import { getTotalPriceProductsInStock } from '../services/Admin/Stock/getTotalPriceProductsInStock'
 import { insertStockProducts } from '../services/Admin/Stock/insertStockProduct'
+import { addCategoryService } from '../services/Admin/Category/AddCategory'
+import { getAllCategoryService } from '../services/Admin/Category/GetAllCategoryes'
 
-import React, { useContext } from "react";
-import { Context } from "../contexts/Context";
-import { currency } from '../utils/MaskPriceFormater'
-
-export default function Simple(props: any) {
+export default function StockPage(props: any) {
     const [nomeProduto, setNomeProduto] = useState('');
     const [idProduto, setIdProduto] = useState('')
     const [quantidade, setQuantidade] = useState<number>(0)
@@ -57,18 +57,16 @@ export default function Simple(props: any) {
     const [postImage, setPostImage] = useState({
         foto: '',
     });
-    //Currency, moeda mask
-    // function handleChangeMaskCurrency(event: any) {
-    //     const { value } = event.target
-    //     setPreco(currency(value))
-    //     console.log(value)
 
-    // }
+    const [nomeCategoria, setNomeCategoria] = useState('');
+    const [allCategories, setAllCategories] = useState([{'idCategory': 'idCategory', 'Categorycol': 'Categorycol' }])
+    const [updateCategoria, setUpdateCategoria] = useState('');
 
     //Modal
     const { isOpen, onOpen: onOpenModal, onClose } = useDisclosure()
     const { isOpen: isOpenDelete, onOpen: onOpenDelete, onClose: onCloseDelete } = useDisclosure()
     const { isOpen: isOpenAddProduct, onOpen: onOpenAddProduct, onClose: onCloseAddProduct } = useDisclosure()
+    const { isOpen: isOpenAddCategory, onOpen: onOpenAddCategory, onClose: onCloseAddCategory } = useDisclosure()
 
     type resultProps = {
         idStock: string
@@ -78,27 +76,34 @@ export default function Simple(props: any) {
         quantidade: number
         status: string
         Status: string
+        Categorycol: string
     }
     //Get all registers
     const [result, setResult] = useState<resultProps[]>([]);
     const getAllRegistersStockProducts = async () => {
         const data = await getAllStockRegistersAdmin()
+        //console.log(`DADOS.............. ${JSON.stringify(data)}`)
         setResult(data)
+    }
+    const getAllCategories = async () => {
+        const data = await getAllCategoryService()
+        setAllCategories(data)
     }
 
     const { context, setContext } = useContext(Context)
     useEffect(() => {
         getAllRegistersStockProducts()
         setContext(true)
+        getAllCategories()
         console.log(`context table ${context}`)
     }, [])
 
 
     // GET TOTAL PRODUCTS
-    type totalProducts = {
+    type totalProductsType = {
         total: number
     }
-    const [totalProducts, settotalProducts] = useState<totalProducts[] | []>([]);
+    const [totalProducts, settotalProducts] = useState<totalProductsType[] | []>([]);
     useEffect(() => {
         getTotalProducts()
         console.log(totalProducts)
@@ -132,15 +137,6 @@ export default function Simple(props: any) {
     };
     // GET TOTAL PRODUCTS PRICE END
 
-    const handleDownload = (anexo: any) => {
-        anexo = anexo.replace('data:image/png;base64,', '')
-        const payload = { anexo: anexo }
-        // console.log(payload.anexo)
-        var a = document.createElement("a"); //Create <a>
-        a.href = "data:image/png;base64," + payload.anexo; //Image Base64 Goes here
-        a.download = "Image.png"; //File name Here
-        a.click(); //Downloaded file
-    };
 
     const handleChangeDropDown = (e: any) => {
         e.preventDefault()
@@ -151,15 +147,19 @@ export default function Simple(props: any) {
             setStatusProdutoHabilitado('2')
         }
     }
-
+    const handleChangeDropDownCategory = (e: any) => {
+        e.preventDefault()
+        console.log(`CETEGORIA: ${e.target.value}`)
+        setUpdateCategoria(e.target.value)
+    }
 
 
     // INSERT PRODUCTS PRICE, QUANTITY, NAME
     const handleSubmitAddProduct = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault();
         const insertProductStock = async () => {
-            console.log(`base64 foto = ${JSON.stringify(postImage)}`)
-            const insertProductsAttributes = await insertStockProducts({ nome: nomeProduto, foto: postImage, preco: preco, quantidade: quantidade, status: statusProdutoHabilitado })
+            //console.log(`base64 foto = ${JSON.stringify(postImage)}`)
+            await insertStockProducts({ nome: nomeProduto, foto: postImage, preco: preco, quantidade: quantidade, status: statusProdutoHabilitado, nomeCategoria: updateCategoria })
         }
         insertProductStock()
         onClose()
@@ -196,7 +196,7 @@ export default function Simple(props: any) {
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault();
         const updateProductAttributes = async () => {
-            const updateProductsAttributes = await updateStockProductsAttributes({ idStock: idProduto, nome: nomeProduto, preco: preco, quantidade: quantidade, status: statusProdutoHabilitado })
+            await updateStockProductsAttributes({ idStock: idProduto, nome: nomeProduto, preco: preco, quantidade: quantidade, status: statusProdutoHabilitado, nomeCategoria: updateCategoria })
         }
         updateProductAttributes()
         onClose()
@@ -275,9 +275,8 @@ export default function Simple(props: any) {
         const element = document.createElement("a")
         let novoArray: any = ["ID", "NOME", "PRECO", "QUANTIDADE"]
         let arraySemAnexo: any = []
-        result.map(function (item, indice, array) {
-            arraySemAnexo.push(` \n ${result[indice]['idStock']}, ${result[indice]['nome']} ,${result[indice]['preco']} , ${result[indice]['quantidade']}`)
-            console.log(item)
+        result.map(function (item, indice) {
+            return arraySemAnexo.push(` \n ${result[indice]['idStock']}, ${result[indice]['nome']} ,${result[indice]['preco']} , ${result[indice]['quantidade']}`)
         });
 
         const file = new Blob([`${novoArray} \n ${arraySemAnexo}`]);
@@ -295,6 +294,25 @@ export default function Simple(props: any) {
 
     }
 
+
+    function handleSubmitAddCategory(e: any) {
+        e.preventDefault()
+        const addCategory = async () => {
+            await addCategoryService({ nomeCategoria: nomeCategoria })
+        }
+        addCategory()
+        onCloseAddCategory()
+        setTimeout(() => {
+            getAllRegistersStockProducts()
+            getTotalPriceProducts()
+            getTotalProducts()
+        }, 100)
+        setNomeProduto('')
+        setQuantidade(0)
+        setPreco(0)
+        setNomeCategoria('')
+        getAllCategories()
+    }
 
     return (
         <>
@@ -338,19 +356,32 @@ export default function Simple(props: any) {
 
                 <Stack ml={4} mb={2}>
                     <Button
-
-                        as={'a'}
                         display={{ base: 'none', md: 'inline-flex' }}
                         fontSize={'sm'}
                         fontWeight={600}
                         color={'white'}
                         bg={'blue.400'}
-                        href={'#'}
                         _hover={{
                             bg: 'blue.300',
                         }}
                         onClick={() => { onOpenAddProduct() }}
                     > Adicionar Produto
+                        <AddIcon ml={3} />
+                    </Button>
+                </Stack>
+
+                <Stack ml={4} mb={2}>
+                    <Button
+                        display={{ base: 'none', md: 'inline-flex' }}
+                        fontSize={'sm'}
+                        fontWeight={600}
+                        color={'white'}
+                        bg={'blue.400'}
+                        _hover={{
+                            bg: 'blue.300',
+                        }}
+                        onClick={() => { onOpenAddCategory() }}
+                    > Adicionar Categoria
                         <AddIcon ml={3} />
                     </Button>
                 </Stack>
@@ -367,6 +398,7 @@ export default function Simple(props: any) {
                             <Th>Quant.</Th>
                             <Th>Status</Th>
                             <Th></Th>
+                            <Th>Categoria</Th>
                             <Th>Editar</Th>
                             <Th></Th>
                         </Tr>
@@ -379,15 +411,16 @@ export default function Simple(props: any) {
                                 return post;
                             }
                         }).map((post, index) => (
-                            <Tbody>
+                            <Tbody key={post.idStock}>
                                 <Tr>
                                     <Td>{post.idStock}</Td>
                                     <Td>{post.nome}</Td>
-                                    <Td > <img title={post.nome} src={post.foto} width='45px'/></Td>
+                                    <Td > <img title={post.nome} src={post.foto} width='45px' /></Td>
                                     <Td>{post.preco}</Td>
                                     <Td>{post.quantidade}</Td>
                                     <Td>{post.status}</Td>
                                     <Td><CircleStatus status={setStatusColorIconChakra(post.status)} /></Td>
+                                    <Td>{post.Categorycol}</Td>
                                     <Td><Button onClick={() => handleOpenModal(post.idStock, post.nome, post.preco, post.quantidade, post.status)}><EditIcon /></Button></Td>
                                     <Td><Button colorScheme='red' onClick={() => handleOpenModalDelete(post.idStock, post.nome)}> <DeleteIcon /></Button></Td>
                                 </Tr>
@@ -452,7 +485,7 @@ export default function Simple(props: any) {
                                         />
                                     </InputGroup>
 
-                                    <InputGroup>
+                                    <InputGroup mb={2}>
                                         <InputLeftAddon children='Quant.' />
                                         <NumberInput value={quantidade}
                                             onChange={(val) => {
@@ -468,9 +501,15 @@ export default function Simple(props: any) {
                                             </NumberInputStepper>
                                         </NumberInput>
                                     </InputGroup>
-                                    <Select placeholder='Selecione o status' onChange={handleChangeDropDown} >
+                                    <Select placeholder='Selecione o status' onChange={handleChangeDropDown} mb={2} >
                                         <option value='Ativado'>Ativado</option>
                                         <option value='Inativado'>Inativo</option>
+                                    </Select>
+
+                                    <Select placeholder='Categoria' onChange={handleChangeDropDownCategory} mb={2} >
+                                        {allCategories.map((data, index) => (
+                                            <option value={data.idCategory}>{data.Categorycol}</option>
+                                        ))}
                                     </Select>
                                 </FormControl>
                             </ModalBody>
@@ -550,7 +589,7 @@ export default function Simple(props: any) {
                                         />
                                     </InputGroup>
 
-                                    <InputGroup>
+                                    <InputGroup mb={2}>
                                         <InputLeftAddon children='Quant.' />
                                         <NumberInput value={quantidade}
                                             onChange={(val) => {
@@ -566,9 +605,14 @@ export default function Simple(props: any) {
                                             </NumberInputStepper>
                                         </NumberInput>
                                     </InputGroup>
-                                    <Select placeholder='Selecione o status' onChange={handleChangeDropDown} >
+                                    <Select placeholder='Selecione o status' onChange={handleChangeDropDown} mb={2}>
                                         <option value='Ativado'>Ativado</option>
                                         <option value='Inativado'>Inativo</option>
+                                    </Select>
+                                    <Select placeholder='Categoria' onChange={handleChangeDropDownCategory} mb={2} >
+                                        {allCategories.map((data, index) => (
+                                            <option value={data.idCategory}>{data.Categorycol}</option>
+                                        ))}
                                     </Select>
                                 </FormControl>
                             </ModalBody>
@@ -598,6 +642,50 @@ export default function Simple(props: any) {
                             <ModalFooter>
                                 <Button colorScheme='red' mr={'25%'} w={'50%'} type='submit' onClick={(event => handleDelete(event))}>
                                     Deletar
+                                </Button>
+                            </ModalFooter>
+                        </ModalContent>
+                    </form>
+                </Modal>
+
+
+                {/*MODAL ADD Category*/}
+                <Modal isOpen={isOpenAddCategory} onClose={onCloseAddCategory} >
+                    <ModalOverlay />
+                    <form onSubmit={handleSubmitAddCategory} >
+                        <ModalContent>
+                            <ModalHeader>Nova Categoria</ModalHeader>
+                            <ModalCloseButton />
+                            <ModalBody>
+                                <FormControl >
+                                    <InputGroup>
+                                        <InputLeftAddon children='Categoria' />
+                                        <Input
+                                            mb={2}
+                                            variant={'solid'}
+                                            borderWidth={1}
+                                            color={'gray.800'}
+                                            _placeholder={{
+                                                color: 'gray.400',
+                                            }}
+                                            borderColor={useColorModeValue('gray.300', 'gray.700')}
+                                            id={'nomeCategoria'}
+                                            type={'nomeCategoria'}
+                                            name={nomeCategoria}
+                                            required
+                                            placeholder={'Nome Categoria'}
+                                            aria-label={'Seu nome'}
+                                            value={nomeCategoria}
+                                            onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                                setNomeCategoria(e.target.value)
+                                            }
+                                        />
+                                    </InputGroup>
+                                </FormControl>
+                            </ModalBody>
+                            <ModalFooter>
+                                <Button colorScheme='blue' mr={'25%'} w={'50%'} type='submit' onClick={onCloseAddCategory}>
+                                    Adicionar
                                 </Button>
                             </ModalFooter>
                         </ModalContent>
